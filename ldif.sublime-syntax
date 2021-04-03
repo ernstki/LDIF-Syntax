@@ -1,0 +1,204 @@
+%YAML 1.2
+---
+# http://www.sublimetext.com/docs/3/syntax.html
+name: LDAP Data Interchange Format
+file_extensions:
+  - ldif
+scope: text.ldif
+contexts:
+  main:
+    - match: 'version:\s*([0-9])(.*)'
+      comment: Version-Line
+      scope: support.constant.attribute.version.ldif
+      captures:
+        1: constant.numeric.ldif
+        2: invalid.illegal.syntax.ldif
+    - include: comment
+    - match: ^(changetype):\s(add)$
+      comment: Highlighter for LDAP change record add
+      captures:
+        1: entity.name.function.add.ldif
+        2: variable.parameter.changetype.add.ldif
+      push:
+        - meta_scope: meta.changetype.add.ldif
+        - match: (?=dn)
+          pop: true
+        - include: comment
+        - include: attribute_safestring
+        - include: attribute_base64
+        - include: attribute_url
+        - include: delimiter
+        - include: rest_is_illegal
+    - match: ^(changetype):\s(delete)$
+      comment: Highlighter for LDAP change record delete
+      captures:
+        1: entity.name.function.delete.ldif
+        2: variable.parameter.changetype.delete.ldif
+      push:
+        - meta_scope: meta.changetype.delete.ldif
+        - match: (?=dn)
+          pop: true
+        - include: comment
+        - include: rest_is_illegal
+    - match: ^(changetype):\s(modify)$
+      comment: Highlighter for LDAP change record modify
+      captures:
+        1: entity.name.function.modify.ldif
+        2: variable.parameter.changetype.modify.ldif
+      push:
+        - meta_scope: meta.changetype.modify.ldif
+        - match: (?=dn)
+          pop: true
+        - include: comment
+        - match: '^(add|delete|replace):\s*([a-zA-Z0-9-]+)(;[a-zA-Z0-9;-]+)*'
+          comment: Modification specification (mod-spec)
+          scope: entity.name.function.modspec.ldif
+          captures:
+            1: support.constant.attribute.modspec.ldif
+            2: variable.language.attribute.ldif
+            3: constant.other.options.ldif
+        - include: attribute_safestring
+        - include: attribute_base64
+        - include: attribute_url
+        - include: delimiter
+        - include: rest_is_illegal
+    - match: ^(changetype):\s(modrdn)$
+      comment: Highlighter for LDAP change record modrdn
+      captures:
+        1: entity.name.function.modrdn.ldif
+        2: variable.parameter.changetype.modify.ldif
+      push:
+        - meta_scope: meta.changetype.modrdn.ldif
+        - match: (?=dn)
+          pop: true
+        - include: comment
+        - match: '^(newrdn):(?![:])\s*'
+          comment: NewRDN-Attribute with safestring
+          captures:
+            1: entity.name.function.newrdn.ldif
+          push:
+            - meta_content_scope: string.quoted.safe.ldif
+            - match: ^(?! )
+              pop: true
+            - include: check_safestring
+        - match: ^(newrdn)::\s*
+          comment: NewRDN-Attribute with base64
+          captures:
+            1: entity.name.function.newrdn.ldif
+          push:
+            - meta_content_scope: string.quoted.base64.ldif
+            - match: ^(?! )
+              pop: true
+            - include: check_base64_string
+        - match: '^deleteoldrdn:\s*([01])$'
+          comment: DeleteOldRDN-Attribute
+          scope: entity.name.function.deleteoldrdn.ldif
+          captures:
+            1: constant.numeric.ldif
+        - match: '^(newsuperior):(?![:])\s*'
+          comment: newSuperior-Attribute with safestring
+          captures:
+            1: entity.name.function.newsuperior.ldif
+          push:
+            - meta_content_scope: string.quoted.safe.ldif
+            - match: ^(?! )
+              pop: true
+            - include: check_safestring
+        - match: ^(newsuperior)::\s*
+          comment: newSuperior-Attribute with base64
+          captures:
+            1: entity.name.function.newsuperior.ldif
+          push:
+            - meta_content_scope: string.quoted.base64.ldif
+            - match: ^(?! )
+              pop: true
+            - include: check_base64_string
+        - include: delimiter
+        - include: rest_is_illegal
+    - include: attribute_special_safestring
+    - include: attribute_special_base64
+    - include: attribute_safestring
+    - include: attribute_base64
+    - include: attribute_url
+    - include: rest_is_illegal
+  comment:
+    - match: ^\s*#.*$
+      comment: Comments must be reusable because they can also appear within modify blocks.
+      scope: comment.ldif
+  attribute_base64:
+    - match: '^([a-zA-Z0-9-]+)(;[a-zA-Z0-9;-]+)*::\s*'
+      comment: Attribute (base64)
+      captures:
+        1: variable.language.attribute.ldif
+        2: constant.other.options.ldif
+      push:
+        - meta_content_scope: string.quoted.base64.ldif
+        - match: ^(?! )
+          pop: true
+        - include: check_base64_string
+  attribute_safestring:
+    - match: '^([a-zA-Z0-9-]+)(;[a-zA-Z0-9;-]+)*:(?![:<])\s*'
+      comment: Attribute (safe string)
+      captures:
+        1: variable.language.attribute.ldif
+        2: constant.other.options.ldif
+      push:
+        - meta_content_scope: string.quoted.safe.ldif
+        - match: ^(?! )
+          pop: true
+        - include: check_safestring
+  attribute_special_base64:
+    - match: '^(?i:(dn|objectclass))(;[a-zA-Z0-9;-]+)*::\s*'
+      comment: Attribute (base64)
+      captures:
+        1: keyword.other.ldif
+        2: constant.other.options.ldif
+      push:
+        - meta_content_scope: string.quoted.base64.ldif
+        - match: ^(?! )
+          pop: true
+        - include: check_base64_string
+  attribute_special_safestring:
+    - match: '^(?i:(dn|objectclass))(;[a-zA-Z0-9;-]+)*:(?![:<])\s*'
+      comment: Attribute (safe string)
+      captures:
+        1: keyword.other.ldif
+        2: constant.other.options.ldif
+      push:
+        - meta_content_scope: string.quoted.safe.ldif
+        - match: ^(?! )
+          pop: true
+        - include: check_safestring
+  attribute_url:
+    - match: '^([a-zA-Z0-9-]+)(;[a-zA-Z0-9;-]+)*:<\s*'
+      comment: Attribute (url)
+      captures:
+        1: variable.language.attribute.ldif
+        2: constant.other.options.ldif
+      push:
+        - meta_content_scope: string.quoted.base64.ldif
+        - match: ^(?! )
+          pop: true
+        - include: check_url_string
+  check_base64_string:
+    - match: '[^\r\n+/=A-Za-z0-9 ]+'
+      comment: Highlight invalid characters in a LDIF base64 string
+      scope: invalid.illegal.character.ldif
+  check_safestring:
+    - match: '[^\r\n\x{01}-\x{09}\x{0B}-\x{0C}\x{0E}-\x{1F}\x{21}-\x{39}\x{3B}\x{3D}-\x{7F}\x{01}-\x{09}\x{0B}-\x{0C}\x{0E}-\x{7F}]+'
+      comment: Highlight invalid characters in a LDIF safestring
+      scope: invalid.illegal.character.ldif
+  check_url_string:
+    - match: |-
+        [^
+        a-zA-Z0-9$.+!*(),_{}|\\^~\[\]`<>#%'";/?:@&=-]
+      comment: Highlight invalid characters in a LDIF url string
+      scope: invalid.illegal.character.ldif
+  delimiter:
+    - match: ^-$
+      comment: Block delimiter for multiple changes.
+      scope: comment.delimiter.ldif
+  rest_is_illegal:
+    - match: .*
+      comment: Marks everything else als illegal. Is used as a catch-all statement.
+      scope: invalid.illegal.syntax.ldif
